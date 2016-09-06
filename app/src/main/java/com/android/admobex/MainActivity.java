@@ -1,0 +1,80 @@
+package com.android.admobex;
+
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+
+import com.android.admoblib.expressads.AdmobExpressRecyclerAdapterWrapper;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.MobileAds;
+
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity {
+
+    private RecyclerView rvMessages;
+    private AdmobExpressRecyclerAdapterWrapper adapterWrapper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        MobileAds.initialize(getApplicationContext(), getString(R.string.test_admob_app_id));
+
+        initRecyclerViewItems();
+    }
+
+    private void initRecyclerViewItems() {
+        rvMessages = (RecyclerView) findViewById(R.id.rvMessages);
+        rvMessages.setLayoutManager(new LinearLayoutManager(this));
+
+        //creating your adapter, it could be a custom adapter as well
+        RecyclerExampleAdapter adapter = new RecyclerExampleAdapter(this);
+
+        //your test devices' ids
+        String[] testDevicesIds = new String[]{getString(R.string.testDeviceID), AdRequest.DEVICE_ID_EMULATOR};
+        //when you'll be ready for release please use another ctor with admobReleaseUnitId instead.
+        adapterWrapper = new AdmobExpressRecyclerAdapterWrapper(this, testDevicesIds);
+        //By default the ad size is set to FULL_WIDTHx150
+        //To set a custom size you should use an appropriate ctor
+        //adapterWrapper = new AdmobExpressRecyclerAdapterWrapper(this, testDevicesIds, new AdSize(AdSize.FULL_WIDTH, 150));
+
+        adapterWrapper.setAdapter(adapter); //wrapping your adapter with a AdmobExpressRecyclerAdapterWrapper.
+
+        //Sets the max count of ad blocks per dataset, by default it equals to 3 (according to the Admob's policies and rules)
+        adapterWrapper.setLimitOfAds(3);
+
+        //Sets the number of your data items between ad blocks, by default it equals to 10.
+        //You should set it according to the Admob's policies and rules which says not to
+        //display more than one ad block at the visible part of the screen,
+        // so you should choose this parameter carefully and according to your item's height and screen resolution of a target devices
+        adapterWrapper.setNoOfDataBetweenAds(10);
+        adapterWrapper.setFirstAdIndex(2);
+
+        //if you use several view types in your source adapter then you have to set the biggest view type value with the following method
+        //adapterWrapper.setViewTypeBiggestSource(100);
+
+        rvMessages.setAdapter(adapterWrapper); // setting an AdmobExpressRecyclerAdapterWrapper to a RecyclerView
+
+        //preparing the collection of data
+        final String sItem = "item #";
+        ArrayList<String> lst = new ArrayList<String>(100);
+        for (int i = 1; i <= 100; i++)
+            lst.add(sItem.concat(Integer.toString(i)));
+
+        //adding a collection of data to your adapter and rising the data set changed event
+        adapter.addAll(lst);
+        adapter.notifyDataSetChanged();
+    }
+
+    /*
+    * Seems to be a good practice to destroy all the resources you have used earlier :)
+     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        adapterWrapper.destroyAds();
+    }
+}
